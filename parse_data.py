@@ -11,6 +11,9 @@ OUTPUT_PATH = '/Volumes/JohnMyPassport/data_repository/VizieR_data/docs/py/'
 
 
 def parse(file_path):
+    print(f'Outpath {OUTPUT_PATH}')
+    print(f'Filepath {file_path}')
+
     html_files = os.listdir(file_path)
     for filename in html_files:
         if filename.startswith('.'):
@@ -98,8 +101,8 @@ def _build_dynamic_table_create_insert():
     build.append("from sqlalchemy import *")
     build.append("from sqlalchemy.orm import sessionmaker, registry, declarative_base, Session")
     build.append("import my_utils")
-    build.append("import concurrent.futures")
-    build.append("from concurrent.futures import ProcessPoolExecutor")
+    # build.append("import concurrent.futures")
+    # build.append("from concurrent.futures import ProcessPoolExecutor")
     cnt = 0
     for table_name in TABLE_LIST:
         build.append(f"from {table_name}_model import {_case_table(table_name)}")
@@ -107,7 +110,8 @@ def _build_dynamic_table_create_insert():
         tables.append(f'\t\t\tif not table_inspect.dialect.has_table(conn, table{cnt}.__tablename__):')
         tables.append(f'\t\t\t\ttable{cnt}.__table__.create(conn)')
         tables.append("")
-        insert.append(f"\t\tp{cnt} = pool.submit(insert_data, db_conn, base_directory, table{cnt})")
+        # insert.append(f"\t\tp{cnt} = pool.submit(insert_data, db_conn, base_directory, table{cnt})")
+        insert.append(f"\tinsert_data( db_conn, base_directory, table{cnt})")
         cnt += 1
     build.append("\n")
     build.append("def build_tables(db_conn, base_directory):")
@@ -125,7 +129,7 @@ def _build_dynamic_table_create_insert():
     build.append('\t\tprint(f"{e}")')
     build.append('\t\traise Exception(f"{e}")')
     build.append('')
-    build.append("\twith concurrent.futures.ProcessPoolExecutor(max_workers=4) as pool:")
+    # build.append("\twith concurrent.futures.ProcessPoolExecutor(max_workers=4) as pool:")
     build.append("\n".join(insert))
     build.append("\n")
 
@@ -133,7 +137,6 @@ def _build_dynamic_table_create_insert():
 
 	c_engine = sqlalchemy.create_engine(db_conn)
 	with c_engine.connect() as conn:
-
 		table_name = table_obj.__tablename__
 		print(f"Inserting to {table_name}")
 		csv_file_list = my_utils.get_csv_files(table_name, base_directory)
@@ -498,7 +501,8 @@ def _build_main_py():
     build.append("")
     build.append("\thostname = platform.node().lower()")
     build.append("\tif 'john' not in hostname:")
-    build.append('\t\tbase = "/Volumes/source/big_data_raw/big_data_raw"')
+    build.append('\t\tbase = "/mnt/source/big_data_raw/big_data_raw"')
+    build.append('\t\tconnection = connection.replace("datahost.local", "localhost")')
     # build.append("\twith concurrent.futures.ProcessPoolExecutor(max_workers=4) as pool:")
     # build.append("\n".join(procs))
     build.append('\ttable_insert.run(connection, base)')
